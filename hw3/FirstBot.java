@@ -6,60 +6,74 @@ import java.util.*;
   */
 public class FirstBot implements RoShamBot {
     
-    private HashMap<Action, HashMap<Action, Integer>> nextMoveMap;
-    private HashMap<Action, Integer> totalActions; // { Action: number of times action has been thrown }
+    private HashMap<Action, HashMap<Action, Integer>> oppNextMoveMap; // { opp last action: { opp next action: # times action thrown }}
+    private HashMap<Action, HashMap<Action, Integer>> myNextMoveMap; // { my last action: { opp next action: # times action thrown }}
+    
+    private HashMap<Action, Integer> totalOppActions; // { Action: # times action has been thrown by opponent }
+    private HashMap<Action, Integer> totalMyActions; // { Action: # times action has been thrown by me }
     private Action [] actionArray; // [ ROCK, PAPER, SCISSORS, LIZARD, SPOCK ]
-    private Action twoBack; // opponent action before last action 
+    private Action oppTwoBack; // opponent action before last action 
+    private Action myTwoBack; // my action before last action 
+    private Action myLastAction; // my last action 
     private int curRound; // keeps track of round number 
-    private HashMap<Action, String> strMap; // { "RP": best response } keys in alphabetical order 
-    private double [][] outcomeMatrix;
+    private double [][] outcomeMatrix; // matrix to determine outcome of my move vs opponent move 
+    
+    private HashMap<Action, String> strMap; // used for testing
     
     public FirstBot(){
         curRound = 0;
-        twoBack = Action.ROCK;
-        nextMoveMap = new HashMap<Action, HashMap<Action, Integer>>(); // map of maps to try and keep track of tendency after throwing a certain thing 
-        strMap = new HashMap<Action, String>();
-        totalActions = new HashMap<Action, Integer>();
+        oppTwoBack = Action.ROCK;
+        myTwoBack = Action.ROCK;
+        myLastAction = Action.ROCK;
+        
+        oppNextMoveMap = new HashMap<Action, HashMap<Action, Integer>>(); // map of maps to keep track of tendencies 
+        myNextMoveMap = new HashMap<Action, HashMap<Action, Integer>>();
+        
+        totalOppActions = new HashMap<Action, Integer>();
+        totalMyActions = new HashMap<Action, Integer>();
+        
         actionArray = new Action [] { Action.ROCK, Action.PAPER, Action.SCISSORS, Action.LIZARD, Action.SPOCK };
         
         // load the map of maps
         for (int i = 0; i < 5; i++) { 
-            totalActions.put(actionArray[i], 0);
-            nextMoveMap.put(actionArray[i], new HashMap<Action, Integer>());
+            totalOppActions.put(actionArray[i], 0);
+            totalMyActions.put(actionArray[i], 0);
+            
+            oppNextMoveMap.put(actionArray[i], new HashMap<Action, Integer>());
+            myNextMoveMap.put(actionArray[i], new HashMap<Action, Integer>());
+            
             for (int j = 0; j < 5; j++) {
-                nextMoveMap.get(actionArray[i]).put(actionArray[j], 0);
-            }
-            if (i == 0) {
-                strMap.put(Action.ROCK, "R"); // R is ROCK
-            } else if (i == 1) {
-                strMap.put(Action.PAPER, "P"); // P is PAPER
-            } else if (i == 2) {
-                strMap.put(Action.SCISSORS, "S"); // S is SCISSORS
-            } else if (i == 3) {
-                strMap.put(Action.LIZARD, "L"); // L is LIZARD 
-            } else if (i == 4) {
-                strMap.put(Action.SPOCK, "K"); // K is SPOCK 
+                oppNextMoveMap.get(actionArray[i]).put(actionArray[j], 0);
+                myNextMoveMap.get(actionArray[i]).put(actionArray[j], 0);
             }
         }
         
-        outcomeMatrix = new double [][] {
-                                                {0.5, 1.0, 0.0, 0.0, 1.0}, 
-                                                {0.0, 0.5, 1.0, 1.0, 0.0}, 
-                                                {1.0, 0.0, 0.5, 0.0, 1.0}, 
-                                                {1.0, 0.0, 1.0, 0.5, 0.0}, 
-                                                {0.0, 1.0, 0.0, 1.0, 0.5}, 
+        outcomeMatrix = new double [][] {         // my move
+                                                {0.0, 1.0, -1.0, -1.0, 1.0}, 
+                                                {-1.0, 0.0, 1.0, 1.0, -1.0}, 
+                                                {1.0, -1.0, 0.0, -1.0, 1.0}, // opponent move 
+                                                {1.0, -1.0, 1.0, 0.0, -1.0}, 
+                                                {-1.0, 1.0, -1.0, 1.0, 0.0}, 
                                             };
+        
+        // This is used for testing 
+        strMap = new HashMap<Action, String>();
+        strMap.put(Action.ROCK, "ROCK");
+        strMap.put(Action.PAPER, "PAPER");
+        strMap.put(Action.SCISSORS, "SCISSORS");
+        strMap.put(Action.LIZARD, "LIZARD");
+        strMap.put(Action.SPOCK, "SPOCK");
         
     }
     
-    private Action bestActionByOutcome(double[] tendencies) {
+    private Action bestActionByOutcome(double[] oppTendencies, double[] myTendencies) {
         int maxSpot = -1;
         double maxVal = -1;
         double [] sumOutcome = new double [] {0.0, 0.0, 0.0, 0.0, 0.0};
         
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
-                sumOutcome[j] += tendencies[i] * outcomeMatrix[i][j];
+                sumOutcome[j] += (oppTendencies[i] + myTendencies[i]) * outcomeMatrix[i][j];
             }
         }
         
@@ -73,14 +87,14 @@ public class FirstBot implements RoShamBot {
         return actionArray[maxSpot];
     }
     
-    private double [] getTendency(Action lastMove) {
+    private double [] getTendency(Action lastMove, HashMap<Action, HashMap<Action, Integer>> curMap, HashMap<Action, Integer> totalActions) {
         
         double [] tendency = new double [5]; // the number of time an action was thrown after a given action
         int totalCurAction = totalActions.get(lastMove); 
         
         for (int i = 0; i < 5; i++) {
             // number of times an action was thrown after the last action
-            int numNextAction = nextMoveMap.get(lastMove).get(actionArray[i]); 
+            int numNextAction = curMap.get(lastMove).get(actionArray[i]); 
             tendency[i] = (double)numNextAction / totalCurAction;
         }
         
@@ -95,18 +109,36 @@ public class FirstBot implements RoShamBot {
       * @return the next action to play.
       */
     public Action getNextMove(Action lastOpponentMove) {
-        Action tempTwoBack = twoBack;
-        twoBack = lastOpponentMove;
+        Action tempOppTwoBack = oppTwoBack;
+        oppTwoBack = lastOpponentMove;
+        
+        myTwoBack = myLastAction;
         curRound++;
-        totalActions.put(lastOpponentMove, totalActions.get(lastOpponentMove) + 1); // total number of each action 
+        
+        totalOppActions.put(lastOpponentMove, totalOppActions.get(lastOpponentMove) + 1); // total number of each action 
+        
         if (curRound < 3) { // throw random for first couple rounds
             int random = (int)Math.floor(Math.random() * 5);
-            return actionArray[random];
+            myLastAction = actionArray[random];
+            totalMyActions.put(myLastAction, totalMyActions.get(myLastAction) + 1);
+            return myLastAction;
         } else {
             // start trying to keep track of tendencies 
-            nextMoveMap.get(tempTwoBack).put(lastOpponentMove, nextMoveMap.get(tempTwoBack).get(lastOpponentMove) + 1);
-            double [] tempTendency = getTendency(lastOpponentMove);
-            return bestActionByOutcome(tempTendency);
+            oppNextMoveMap.get(tempOppTwoBack).put(lastOpponentMove, oppNextMoveMap.get(tempOppTwoBack).get(lastOpponentMove) + 1);
+            myNextMoveMap.get(myTwoBack).put(lastOpponentMove, myNextMoveMap.get(myTwoBack).get(lastOpponentMove) + 1);
+            
+            // determine tendencies for successive opponent moves 
+            double [] tendFromOpponent = getTendency(lastOpponentMove, oppNextMoveMap, totalOppActions);
+            
+            // determine tendencies for opponent after my moves 
+            double [] tendFromMe = getTendency(myLastAction, myNextMoveMap, totalMyActions);
+            
+            Action bestOutcome = bestActionByOutcome(tendFromOpponent, tendFromMe);
+            myLastAction = bestOutcome;
+            
+            totalMyActions.put(myLastAction, totalMyActions.get(myLastAction) + 1);
+            
+            return myLastAction;
         }
     }
     
