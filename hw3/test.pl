@@ -1,11 +1,16 @@
-$results = `java -Xmx5m Tournament.java SolidAsARockBot FirstBot 10000`;
+$opp = 'MixedBot';
+$me = 'FirstBot';
+$me2 = 'SecondBot';
+$numRounds = 1000000;
+
+$results = `time java -Xmx5m Tournament.java $opp $me $numRounds`;
 print("$results\n");
 
-$results = `java -Xmx512m Tournament.java NashBot FirstBot 500`;
+$results = `time java -Xmx512m Tournament.java $opp $me2 $numRounds`;
 print("$results\n");
 
-$results = `java -Xmx512m Tournament.java MixedBot FirstBot 500`;
+$results = `time java -Xmx5m Tournament.java $me $opp $numRounds`;
 print("$results\n");
 
-$results = `java -Xmx512m Tournament.java ApeBot FirstBot 500`;
+$results = `time java -Xmx512m Tournament.java $me2 $opp $numRounds`;
 print("$results\n");
