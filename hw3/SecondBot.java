@@ -9,8 +9,8 @@ public class SecondBot implements RoShamBot {
     private int [][] oppThenOpp; // oppNextMoveMap in matrix form
     private int [][] meThenOpp; // myNextMoveMap in matrix form 
     
-    private int [] oppActionArray; 
-    private int [] meActionArray;
+    private int [] oppActionArray; // total for each action by opponent
+    private int [] meActionArray; // total for each action by me 
     
     private Action [] actionArray; // [ ROCK, PAPER, SCISSORS, LIZARD, SPOCK ]
     private HashMap<Action, Integer> indexMap; // index of each Action in actionArray    
@@ -29,24 +29,24 @@ public class SecondBot implements RoShamBot {
         myTwoBack = Action.ROCK;
         myLastAction = Action.ROCK;
         
-        oppThenOpp = new int [][] {
+        oppThenOpp = new int [][] {             // opp response 
                                             { 0, 0, 0, 0, 0 }, 
                                             { 0, 0, 0, 0, 0 }, 
-                                            { 0, 0, 0, 0, 0 }, 
-                                            { 0, 0, 0, 0, 0 }, 
-                                            { 0, 0, 0, 0, 0 },         
-                                        };
-        
-        meThenOpp = new int [][] {
-                                            { 0, 0, 0, 0, 0 }, 
-                                            { 0, 0, 0, 0, 0 }, 
-                                            { 0, 0, 0, 0, 0 }, 
+                                            { 0, 0, 0, 0, 0 }, // opp prev move
                                             { 0, 0, 0, 0, 0 }, 
                                             { 0, 0, 0, 0, 0 },         
                                         };
         
-        oppActionArray = new int[] {0, 0, 0, 0, 0};
-        meActionArray = new int[] {0, 0, 0, 0, 0};
+        meThenOpp = new int [][] {              // opp response 
+                                            { 0, 0, 0, 0, 0 }, 
+                                            { 0, 0, 0, 0, 0 }, 
+                                            { 0, 0, 0, 0, 0 }, // my move
+                                            { 0, 0, 0, 0, 0 }, 
+                                            { 0, 0, 0, 0, 0 },         
+                                        };
+        
+        oppActionArray = new int[] {0, 0, 0, 0, 0}; // total of each opponent actions
+        meActionArray = new int[] {0, 0, 0, 0, 0}; // total of each my actions 
         
         actionArray = new Action [] { Action.ROCK, Action.PAPER, Action.SCISSORS, Action.LIZARD, Action.SPOCK };
         indexMap = new HashMap<Action, Integer>();

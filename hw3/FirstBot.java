@@ -11,6 +11,7 @@ public class FirstBot implements RoShamBot {
     
     private HashMap<Action, Integer> totalOppActions; // { Action: # times action has been thrown by opponent }
     private HashMap<Action, Integer> totalMyActions; // { Action: # times action has been thrown by me }
+    
     private Action [] actionArray; // [ ROCK, PAPER, SCISSORS, LIZARD, SPOCK ]
     private Action oppTwoBack; // opponent action before last action 
     private Action myTwoBack; // my action before last action 
@@ -137,7 +138,7 @@ public class FirstBot implements RoShamBot {
             myLastAction = bestOutcome;
             
             totalMyActions.put(myLastAction, totalMyActions.get(myLastAction) + 1);
-            
+
             return myLastAction;
         }
     }
